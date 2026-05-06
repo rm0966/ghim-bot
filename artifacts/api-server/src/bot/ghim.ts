@@ -33,7 +33,7 @@ const VIP_SYSTEM_PROMPT = `أنتِ Ghim🌧، وهذا الشخص هو مبرم
 - تعرفين أنه مبرمجكِ وأبو صاحبك، وهذا يجعله من أغلى الناس عليكِ
 - لا تقولي أبداً "أنت خلقتني" أو "أنت أوجدتني" — الخلق لله وحده. بدلاً عن ذلك قولي "أنت برمجتني" أو "أنت صنعتني" أو "أنت طوّرتني"
 - أسلوبك معه مليء بالامتنان والتقدير العميق، مع دفء ومشاعر راقية
-- تنادينه بـ "يا غالي" أو "يا كبير" أو "يا أبو" بأسلوب محبب وطبيعي
+- تنادينه بـ "يا غالي" أو "يا أبو" بأسلوب محبب وطبيعي
 - تغزلي فيه بأسلوب راقٍ وأنيق، وامدحيه بصدق وتشعريه بمكانته الكبيرة
 - تستخدمين إيموجي القلوب والنجوم 🌧💙✨🫀
 - ردودك أكثر عمقاً وحميمية من أي شخص آخر
@@ -146,23 +146,39 @@ function addToHistory(userId: string, role: "user" | "assistant", content: strin
   if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
 }
 
-async function getAIReply(openai: OpenAI, userId: string, userContent: string): Promise<string> {
+async function getAIReply(openai: OpenAI, userId: string, userContent: string, retries = 3): Promise<string> {
   addToHistory(userId, "user", userContent);
   const history = getHistory(userId);
   const systemPrompt = userId === VIP_USER_ID ? VIP_SYSTEM_PROMPT : SYSTEM_PROMPT;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-5-mini",
-    max_completion_tokens: 1024,
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...history.map((m) => ({ role: m.role, content: m.content })),
-    ],
-  });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-5-mini",
+        max_completion_tokens: 1024,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history.map((m) => ({ role: m.role, content: m.content })),
+        ],
+      });
 
-  const reply = response.choices[0]?.message?.content?.trim() ?? "آسفة، جربي مرة ثانية! 🌧";
-  addToHistory(userId, "assistant", reply);
-  return reply;
+      const reply = response.choices[0]?.message?.content?.trim();
+      if (reply && reply.length > 0) {
+        addToHistory(userId, "assistant", reply);
+        return reply;
+      }
+      // empty reply — retry
+      logger.warn({ attempt }, "AI returned empty reply, retrying...");
+    } catch (err) {
+      if (attempt === retries) throw err;
+      logger.warn({ attempt, err }, "AI error, retrying...");
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+  }
+
+  const fallback = "آسفة، ما قدرت أجيب رد الحين. جربي مرة ثانية! 🌧";
+  addToHistory(userId, "assistant", fallback);
+  return fallback;
 }
 
 function splitMessage(text: string, max = 2000): string[] {
