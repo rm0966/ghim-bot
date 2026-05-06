@@ -59,6 +59,9 @@ const conversationHistory = new Map<string, ConversationMessage[]>();
 const userNotes = new Map<string, Note[]>();
 const MAX_HISTORY = 20;
 
+// الأسماء والألقاب اللي يشغّل البوت لما أحد يكتبها
+const botTriggers = new Set<string>(["ghim", "غيم", "قيم"]);
+
 // ── Slash Commands ──────────────────────────────────────────────────────────
 
 const COMMANDS = [
@@ -127,6 +130,29 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName("help")
     .setDescription("شوف كل الأوامر المتاحة 📋"),
+
+  new SlashCommandBuilder()
+    .setName("nickname")
+    .setDescription("أضف أو احذف ألقاب تنشّط البوت 💬")
+    .addSubcommand((sub) =>
+      sub
+        .setName("add")
+        .setDescription("أضف لقب جديد للبوت")
+        .addStringOption((o) =>
+          o.setName("name").setDescription("اللقب أو الاسم الجديد (مثال: غيمي)").setRequired(true),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("list").setDescription("شوف كل الألقاب الحالية"),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("remove")
+        .setDescription("احذف لقب")
+        .addStringOption((o) =>
+          o.setName("name").setDescription("اللقب اللي تبي تحذفه").setRequired(true),
+        ),
+    ),
 
   new SlashCommandBuilder()
     .setName("ping")
@@ -266,15 +292,17 @@ export function startDiscordBot() {
   client.on(Events.MessageCreate, async (message: Message) => {
     if (message.author.bot) return;
     const isDM = !message.guild;
-    const isMentioned =
-      message.mentions.has(client.user!) ||
-      message.content.toLowerCase().includes("ghim");
-    if (!isDM && !isMentioned) return;
+    const lower = message.content.toLowerCase();
+    const isMentioned = message.mentions.has(client.user!);
+    const hasTrigger = [...botTriggers].some((t) => lower.includes(t.toLowerCase()));
+    if (!isDM && !isMentioned && !hasTrigger) return;
 
-    let userContent = message.content
-      .replace(/<@!?\d+>/g, "")
-      .replace(/ghim/gi, "")
-      .trim() || "أهلاً";
+    // احذف المنشن وكل الألقاب من الرسالة
+    let userContent = message.content.replace(/<@!?\d+>/g, "");
+    for (const trigger of botTriggers) {
+      userContent = userContent.replace(new RegExp(trigger, "gi"), "");
+    }
+    userContent = userContent.trim() || "أهلاً";
 
     try {
       await message.channel.sendTyping();
@@ -312,6 +340,7 @@ export function startDiscordBot() {
           { name: "/note add/list/delete", value: "احفظ وأدر ملاحظاتك 📝" },
           { name: "/history", value: "شوف آخر محادثاتك معي 💬" },
           { name: "/clear", value: "امسح سجل المحادثة 🗑️" },
+          { name: "/nickname add/list/remove", value: "أضف أو احذف ألقاب تنشّطني 💬" },
           { name: "/ping", value: "تحقق إذا أنا شغّالة ✅" },
         )
         .setFooter({ text: "أو كلمني في DM أو اذكريني في أي قناة 🌧" });
@@ -467,6 +496,51 @@ export function startDiscordBot() {
         }
         notes.splice(num - 1, 1);
         await slash.reply({ content: `🗑️ تم حذف الملاحظة رقم **${num}** 🌧`, ephemeral: true });
+        return;
+      }
+    }
+
+    // /nickname
+    if (slash.commandName === "nickname") {
+      const sub = slash.options.getSubcommand();
+
+      if (sub === "add") {
+        const name = slash.options.getString("name", true).toLowerCase().trim();
+        if (name.length < 2) {
+          await slash.reply({ content: "اللقب لازم يكون حرفين على الأقل.", ephemeral: true });
+          return;
+        }
+        if (botTriggers.has(name)) {
+          await slash.reply({ content: `"**${name}**" موجود أصلاً في قائمة الألقاب! 🌧`, ephemeral: true });
+          return;
+        }
+        botTriggers.add(name);
+        await slash.reply({
+          content: `✅ تم إضافة "**${name}**" — الحين إذا أحد كتبها في الشات أرد تلقائياً 🌧`,
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (sub === "list") {
+        const list = [...botTriggers].map((t) => `• \`${t}\``).join("\n");
+        const embed = new EmbedBuilder()
+          .setColor(0x5865f2)
+          .setTitle("💬 ألقابي وأسمائي")
+          .setDescription(list || "ما في ألقاب مضافة بعد.")
+          .setFooter({ text: "كلمني بأي اسم من هذي وأرد عليك 🌧" });
+        await slash.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
+      if (sub === "remove") {
+        const name = slash.options.getString("name", true).toLowerCase().trim();
+        if (!botTriggers.has(name)) {
+          await slash.reply({ content: `"**${name}**" مو موجود في قائمة الألقاب.`, ephemeral: true });
+          return;
+        }
+        botTriggers.delete(name);
+        await slash.reply({ content: `🗑️ تم حذف "**${name}**" من الألقاب 🌧`, ephemeral: true });
         return;
       }
     }
