@@ -53,10 +53,48 @@ interface Note {
   createdAt: number;
 }
 
+// ── Trivia Questions ─────────────────────────────────────────────────────────
+
+interface TriviaQuestion {
+  question: string;
+  options: [string, string, string, string];
+  answer: number; // 0-3 index
+}
+
+const TRIVIA_QUESTIONS: TriviaQuestion[] = [
+  { question: "ما هي عاصمة المملكة العربية السعودية؟", options: ["جدة", "الرياض", "مكة المكرمة", "الدمام"], answer: 1 },
+  { question: "كم عدد كواكب المجموعة الشمسية؟", options: ["7", "8", "9", "10"], answer: 1 },
+  { question: "من هو مؤسس شركة Apple؟", options: ["بيل غيتس", "إيلون ماسك", "ستيف جوبز", "مارك زوكربيرغ"], answer: 2 },
+  { question: "ما هي أكبر دولة في العالم من حيث المساحة؟", options: ["كندا", "الصين", "الولايات المتحدة", "روسيا"], answer: 3 },
+  { question: "كم تبلغ سرعة الضوء تقريباً؟", options: ["300,000 كم/ثانية", "150,000 كم/ثانية", "500,000 كم/ثانية", "100,000 كم/ثانية"], answer: 0 },
+  { question: "ما هو أطول نهر في العالم؟", options: ["الأمازون", "النيل", "المسيسيبي", "اليانغتسي"], answer: 1 },
+  { question: "في أي سنة بُني برج إيفل؟", options: ["1850", "1869", "1889", "1901"], answer: 2 },
+  { question: "كم عدد أيام السنة الكبيسة؟", options: ["365", "366", "364", "367"], answer: 1 },
+  { question: "ما هو أصغر كوكب في المجموعة الشمسية؟", options: ["المريخ", "الزهرة", "عطارد", "بلوتو"], answer: 2 },
+  { question: "من كتب رواية ألف ليلة وليلة؟", options: ["ابن خلدون", "مجهول / تراث شعبي", "ابن رشد", "الجاحظ"], answer: 1 },
+  { question: "ما هي العملة الرسمية لليابان؟", options: ["اليوان", "الوون", "الين", "الدولار"], answer: 2 },
+  { question: "كم عدد ألوان قوس قزح؟", options: ["5", "6", "7", "8"], answer: 2 },
+  { question: "ما هو أعلى جبل في العالم؟", options: ["K2", "كيليمنجارو", "إيفرست", "ماترهورن"], answer: 2 },
+  { question: "من اخترع المصباح الكهربائي؟", options: ["نيكولا تسلا", "توماس إديسون", "ألبرت أينشتاين", "مايكل فاراداي"], answer: 1 },
+  { question: "ما هو أكبر محيط في العالم؟", options: ["الأطلسي", "الهندي", "القطبي", "الهادي"], answer: 3 },
+];
+
+const JOKES = [
+  "سألت غيم: ليش السمكة تسبح في الماء؟ قالت: لأن الكوفي شوب مو مفتوح تحت الماء ☕🐟",
+  "مبرمج دخل على مطعم وطلب 1000 طلب. قالوا ليه كثير! قال: عندي loop بدون break 💻",
+  "واحد سأل ChatGPT: كيف حالك؟ قاله: أنا لغة، ما عندي أحوال. قاله: شوفك من زمان ما تغيرت 😅",
+  "أصعب شي في البرمجة: تسمية المتغيرات. أصعب منه: إقناع نفسك إن الكود اللي كتبته بالأمس منطقي 🫠",
+  "الفرق بين الإنسان والكمبيوتر: الإنسان لما يتعطل يشرب قهوة، الكمبيوتر لما يتعطل يشرب updates ☕💻",
+  "واحد قال لغيم: أنتِ ذكاء اصطناعي! قالت: وأنتَ كمان اصطناعي — مصنوع من تراب وماء 😂🌧",
+  "سؤال في امتحان برمجة: ما هو أسرع خوارزمية؟ الإجابة الصحيحة: نسخ ولصق من Stack Overflow 📋",
+  "واحد قال: الكمبيوتر يفعل ما تقوله بالضبط. أجبته: تقصد يفعل ما كتبتَه، مو ما قصدتَه 😅",
+];
+
 // ── State ───────────────────────────────────────────────────────────────────
 
 const conversationHistory = new Map<string, ConversationMessage[]>();
 const userNotes = new Map<string, Note[]>();
+const activeGuessGames = new Map<string, { secret: number; attempts: number }>();
 const MAX_HISTORY = 20;
 
 // الأسماء والألقاب اللي يشغّل البوت لما أحد يكتبها
@@ -152,6 +190,43 @@ const COMMANDS = [
         .addStringOption((o) =>
           o.setName("name").setDescription("اللقب اللي تبي تحذفه").setRequired(true),
         ),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("game")
+    .setDescription("العب مع Ghim🌧 🎮")
+    .addSubcommand((sub) =>
+      sub
+        .setName("rps")
+        .setDescription("حجر ورقة مقص 🪨📄✂️")
+        .addStringOption((o) =>
+          o
+            .setName("choice")
+            .setDescription("اختيارك")
+            .setRequired(true)
+            .addChoices(
+              { name: "🪨 حجر", value: "rock" },
+              { name: "📄 ورقة", value: "paper" },
+              { name: "✂️ مقص", value: "scissors" },
+            ),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("guess").setDescription("خمّن الرقم — غيم تختار رقم من 1 إلى 100 🔢"),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("answer")
+        .setDescription("جاوب على لعبة الأرقام 🔢")
+        .addIntegerOption((o) =>
+          o.setName("number").setDescription("تخمينك (1-100)").setRequired(true).setMinValue(1).setMaxValue(100),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("trivia").setDescription("سؤال ثقافي عشوائي 🧠"),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("joke").setDescription("نكتة من غيم 😂"),
     ),
 
   new SlashCommandBuilder()
@@ -496,6 +571,124 @@ export function startDiscordBot() {
         }
         notes.splice(num - 1, 1);
         await slash.reply({ content: `🗑️ تم حذف الملاحظة رقم **${num}** 🌧`, ephemeral: true });
+        return;
+      }
+    }
+
+    // /game
+    if (slash.commandName === "game") {
+      const sub = slash.options.getSubcommand();
+
+      // حجر ورقة مقص
+      if (sub === "rps") {
+        const choices = ["rock", "paper", "scissors"] as const;
+        const labels: Record<string, string> = { rock: "🪨 حجر", paper: "📄 ورقة", scissors: "✂️ مقص" };
+        const userChoice = slash.options.getString("choice", true) as "rock" | "paper" | "scissors";
+        const botChoice = choices[Math.floor(Math.random() * 3)]!;
+
+        let result = "";
+        if (userChoice === botChoice) result = "🤝 تعادل! ما غلب أحد";
+        else if (
+          (userChoice === "rock" && botChoice === "scissors") ||
+          (userChoice === "paper" && botChoice === "rock") ||
+          (userChoice === "scissors" && botChoice === "paper")
+        ) result = "🎉 أنت فزت! مبروك 🌧";
+        else result = "😏 أنا فزت! حاول مرة ثانية 🌧";
+
+        const embed = new EmbedBuilder()
+          .setColor(result.includes("فزت! مبروك") ? 0x57f287 : result.includes("أنا فزت") ? 0xed4245 : 0xfee75c)
+          .setTitle("🎮 حجر ورقة مقص")
+          .addFields(
+            { name: "اختيارك", value: labels[userChoice]!, inline: true },
+            { name: "اختياري", value: labels[botChoice]!, inline: true },
+            { name: "النتيجة", value: result },
+          );
+        await slash.reply({ embeds: [embed] });
+        return;
+      }
+
+      // ابدأ لعبة الأرقام
+      if (sub === "guess") {
+        const secret = Math.floor(Math.random() * 100) + 1;
+        activeGuessGames.set(userId, { secret, attempts: 0 });
+        const embed = new EmbedBuilder()
+          .setColor(0x5865f2)
+          .setTitle("🔢 لعبة خمّن الرقم!")
+          .setDescription("اخترت رقم في ذهني من **1 إلى 100** 🧠\nاستخدم `/game answer <رقمك>` لتخمّن!\nعندك **10 محاولات** 🎯");
+        await slash.reply({ embeds: [embed] });
+        return;
+      }
+
+      // جاوب على الأرقام
+      if (sub === "answer") {
+        const game = activeGuessGames.get(userId);
+        if (!game) {
+          await slash.reply({ content: "ما عندك لعبة نشطة! ابدأ بـ `/game guess` أولاً 🎮", ephemeral: true });
+          return;
+        }
+        const guess = slash.options.getInteger("number", true);
+        game.attempts++;
+
+        if (guess === game.secret) {
+          activeGuessGames.delete(userId);
+          const embed = new EmbedBuilder()
+            .setColor(0x57f287)
+            .setTitle("🎉 صح! أنت عبقري!")
+            .setDescription(`الرقم كان **${game.secret}** وخمّنته في **${game.attempts}** محاولة! 🌧`);
+          await slash.reply({ embeds: [embed] });
+        } else if (game.attempts >= 10) {
+          activeGuessGames.delete(userId);
+          const embed = new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle("😔 خلصت المحاولات!")
+            .setDescription(`الرقم كان **${game.secret}** — حظاً أحسن المرة القادمة! ابدأ من جديد بـ \`/game guess\` 🌧`);
+          await slash.reply({ embeds: [embed] });
+        } else {
+          const hint = guess < game.secret ? "📈 أكبر من كذا!" : "📉 أصغر من كذا!";
+          const remaining = 10 - game.attempts;
+          const embed = new EmbedBuilder()
+            .setColor(0xfee75c)
+            .setTitle(`🔢 تخمينك: ${guess}`)
+            .setDescription(`${hint}\nباقي **${remaining}** محاولة 🎯`);
+          await slash.reply({ embeds: [embed] });
+        }
+        return;
+      }
+
+      // تريفيا
+      if (sub === "trivia") {
+        const q = TRIVIA_QUESTIONS[Math.floor(Math.random() * TRIVIA_QUESTIONS.length)]!;
+        const letters = ["أ", "ب", "ج", "د"];
+        const optionsText = q.options.map((opt, i) => `**${letters[i]})** ${opt}`).join("\n");
+        const embed = new EmbedBuilder()
+          .setColor(0x5865f2)
+          .setTitle("🧠 سؤال ثقافي")
+          .setDescription(`**${q.question}**\n\n${optionsText}`)
+          .setFooter({ text: `الإجابة الصحيحة: ${letters[q.answer]}) ${q.options[q.answer]}` });
+        // أرسل السؤال بدون footer أولاً ثم عدّل بعد 10 ثواني
+        await slash.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0x5865f2)
+              .setTitle("🧠 سؤال ثقافي")
+              .setDescription(`**${q.question}**\n\n${optionsText}`)
+              .setFooter({ text: "فكّر وردّ! الإجابة تظهر بعد 10 ثواني ⏳" }),
+          ],
+        });
+        setTimeout(async () => {
+          await slash.editReply({ embeds: [embed] }).catch(() => null);
+        }, 10_000);
+        return;
+      }
+
+      // نكتة
+      if (sub === "joke") {
+        const joke = JOKES[Math.floor(Math.random() * JOKES.length)]!;
+        const embed = new EmbedBuilder()
+          .setColor(0xfee75c)
+          .setTitle("😂 نكتة من Ghim🌧")
+          .setDescription(joke);
+        await slash.reply({ embeds: [embed] });
         return;
       }
     }
