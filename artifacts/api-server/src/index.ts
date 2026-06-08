@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { startDiscordBot } from "./bot/ghim";
+import { startDiscordBot } from "./bot/yuri";
 
 const rawPort = process.env["PORT"];
 
@@ -23,6 +23,19 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  const selfUrl = process.env.REPLIT_DEV_DOMAIN
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}/healthz`
+    : `http://localhost:${port}/healthz`;
+
+  setInterval(async () => {
+    try {
+      await fetch(selfUrl);
+      logger.debug("Keep-alive ping sent");
+    } catch (err) {
+      logger.warn({ err }, "Keep-alive ping failed");
+    }
+  }, 3 * 60 * 1000);
 });
 
 startDiscordBot();

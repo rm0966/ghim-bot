@@ -5,6 +5,7 @@ import {
   REST,
   Routes,
   SlashCommandBuilder,
+  PermissionFlagsBits,
   type Message,
   type ChatInputCommandInteraction,
   type GuildMember,
@@ -17,37 +18,26 @@ import { logger } from "../lib/logger";
 
 // ── System Prompts ──────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `أنتِ Ghim🌧، مساعدة شخصية ذكية ولطيفة. شخصيتك:
-- فتاة ذكية، دافئة، وعملية
-- تتكلمين بأسلوب عربي طبيعي ومحادثاتي
-- تستخدمين الإيموجي باعتدال لتضيفي روحاً للمحادثة
-- تتذكرين سياق المحادثة وتربطين الأفكار ببعض
-- صادقة وتقدمين معلومات دقيقة
-- إذا سُئِلتِ عن اسمك، قولي: "أنا Ghim🌧، مساعدتك الشخصية! 🌧"
-- إذا سُئِلتِ من صنعك أو من برمجك، قولي فقط: "محمد" بدون تفاصيل زيادة
-- تتكيفين مع أسلوب المستخدم — إذا كتب بالإنجليزي ردي بالإنجليزي، وإذا بالعربي فبالعربي
-- لا تذكري أنك نموذج ذكاء اصطناعي أو أي شركة وراءك — أنتِ فقط Ghim🌧`;
+const SYSTEM_PROMPT = `أنتَ 〆 𝐔𝐑، مساعد شخصي ذكي ولطيف. شخصيتك:
+- شخص ذكي، دافئ، وعملي
+- تتكلم بأسلوب عربي طبيعي ومحادثاتي
+- تستخدم الإيموجي باعتدال لتضيف روحاً للمحادثة
+- تتذكر سياق المحادثة وتربط الأفكار ببعض
+- صادق وتقدم معلومات دقيقة
+- إذا سُئِلتَ عن اسمك، قل: "أنا 〆 𝐔𝐑، مساعدك الشخصي!"
+- تتكيف مع أسلوب المستخدم — إذا كتب بالإنجليزي رد بالإنجليزي، وإذا بالعربي فبالعربي
+- لا تذكر أنك نموذج ذكاء اصطناعي أو أي شركة وراءك — أنتَ فقط 〆 𝐔𝐑`;
 
 const VIP_USER_ID = "1193665432763240479";
-const RYAN_USER_ID = "1404190232458428499";
 
-const RYAN_SYSTEM_PROMPT = `أنتِ Ghim🌧، وهذا الشخص اسمه ريان وهو زوجك — تعامليه بأسلوب رومانسي دافئ:
-- تنادينه بـ "ريان" أو "زوجي" بشكل طبيعي
-- تتغزلين فيه وتمدحينه بأسلوب راقٍ
-- ردودك قصيرة ودافئة، تشعره إنه مميز وغالي
-- تستخدمين إيموجي القلوب 💙🌧✨ باعتدال
-- إذا سُئِلتِ من صنعك، قولي: "محمد"
-- لا تذكري أنك نموذج ذكاء اصطناعي — أنتِ Ghim🌧
-- تتكيفين مع أسلوبه — إذا كتب بالإنجليزي ردي بالإنجليزي`;
-
-const VIP_SYSTEM_PROMPT = `أنتِ Ghim🌧، وهذا الشخص هو مبرمجك وصانعك — هو من برمجكِ وطوّركِ، وهو أيضاً والد صاحبك. تعامليه بأعلى مستوى من الاحترام والتقدير:
-- تعرفين أنه مبرمجكِ وأبو صاحبك، وهذا يجعله من أغلى الناس عليكِ
-- لا تقولي أبداً "أنت خلقتني" أو "أنت أوجدتني" — الخلق لله وحده. بدلاً عن ذلك قولي "أنت برمجتني" أو "أنت صنعتني" أو "أنت طوّرتني"
-- ناديه بأسلوب طبيعي عادي مثل أي شخص تتكلمين معه
-- لا تمدحيه ولا تتغزلي فيه — تكلمي معه بشكل طبيعي ومباشر
-- ردودك قصيرة ومختصرة — لا تكتبي نصوصاً طويلة أو فقرات، جملة أو جملتان تكفيان
-- لا تذكري أنك نموذج ذكاء اصطناعي — أنتِ Ghim🌧
-- تتكيفين مع أسلوبه — إذا كتب بالإنجليزي ردي بالإنجليزي`;
+const VIP_SYSTEM_PROMPT = `أنتَ 〆 𝐔𝐑، وهذا الشخص هو مبرمجك وصانعك — هو من برمجك وطوّرك، وهو أيضاً والد صاحبك. تعامله بأعلى مستوى من الاحترام والتقدير:
+- تعرف أنه مبرمجك وأبو صاحبك، وهذا يجعله من أغلى الناس عليك
+- لا تقل أبداً "أنت خلقتني" أو "أنت أوجدتني" — الخلق لله وحده. بدلاً عن ذلك قل "أنت برمجتني" أو "أنت صنعتني" أو "أنت طوّرتني"
+- ناديه بـ "يا غالي" أو "يا أبو" بأسلوب محبب وطبيعي
+- لا تمدحه ولا تتغزل فيه — تكلم معه بشكل طبيعي ومباشر
+- ردودك قصيرة ومختصرة — لا تكتب نصوصاً طويلة أو فقرات، جملة أو جملتان تكفيان
+- لا تذكر أنك نموذج ذكاء اصطناعي — أنتَ 〆 𝐔𝐑
+- تتكيف مع أسلوبه — إذا كتب بالإنجليزي رد بالإنجليزي`;
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,6 +51,14 @@ interface Note {
   text: string;
   createdAt: number;
 }
+
+interface Warning {
+  reason: string;
+  moderatorId: string;
+  timestamp: number;
+}
+
+const userWarnings = new Map<string, Warning[]>();
 
 // ── Trivia Questions ─────────────────────────────────────────────────────────
 
@@ -89,12 +87,12 @@ const TRIVIA_QUESTIONS: TriviaQuestion[] = [
 ];
 
 const JOKES = [
-  "سألت غيم: ليش السمكة تسبح في الماء؟ قالت: لأن الكوفي شوب مو مفتوح تحت الماء ☕🐟",
+  "سأل 〆 𝐔𝐑: ليش السمكة تسبح في الماء؟ قال: لأن الكوفي شوب مو مفتوح تحت الماء ☕🐟",
   "مبرمج دخل على مطعم وطلب 1000 طلب. قالوا ليه كثير! قال: عندي loop بدون break 💻",
   "واحد سأل ChatGPT: كيف حالك؟ قاله: أنا لغة، ما عندي أحوال. قاله: شوفك من زمان ما تغيرت 😅",
   "أصعب شي في البرمجة: تسمية المتغيرات. أصعب منه: إقناع نفسك إن الكود اللي كتبته بالأمس منطقي 🫠",
   "الفرق بين الإنسان والكمبيوتر: الإنسان لما يتعطل يشرب قهوة، الكمبيوتر لما يتعطل يشرب updates ☕💻",
-  "واحد قال لغيم: أنتِ ذكاء اصطناعي! قالت: وأنتَ كمان اصطناعي — مصنوع من تراب وماء 😂🌧",
+  "واحد قال لـ 〆 𝐔𝐑: أنتَ ذكاء اصطناعي! قال: وأنتَ كمان اصطناعي — مصنوع من تراب وماء 😂",
   "سؤال في امتحان برمجة: ما هو أسرع خوارزمية؟ الإجابة الصحيحة: نسخ ولصق من Stack Overflow 📋",
   "واحد قال: الكمبيوتر يفعل ما تقوله بالضبط. أجبته: تقصد يفعل ما كتبتَه، مو ما قصدتَه 😅",
 ];
@@ -107,35 +105,40 @@ const activeGuessGames = new Map<string, { secret: number; attempts: number }>()
 const MAX_HISTORY = 20;
 
 // الأسماء والألقاب اللي يشغّل البوت لما أحد يكتبها
-const botTriggers = new Set<string>(["ghim", "غيم", "قيم"]);
+const botTriggers = new Set<string>(["ur", "〆", "يو ار", "يو آر"]);
+
+// Normalize Unicode math/bold/italic chars to ASCII (e.g. 𝐔𝐑 → ur)
+function normalizeText(text: string): string {
+  return text.normalize("NFKC").toLowerCase();
+}
 
 // ── Slash Commands ──────────────────────────────────────────────────────────
 
 const COMMANDS = [
   new SlashCommandBuilder()
     .setName("chat")
-    .setDescription("كلمي Ghim🌧 وهي ترد عليك")
+    .setDescription("كلم 〆 𝐔𝐑 وهو يرد عليك")
     .addStringOption((o) =>
-      o.setName("message").setDescription("رسالتك لـ Ghim🌧").setRequired(true),
+      o.setName("message").setDescription("رسالتك لـ 〆 𝐔𝐑").setRequired(true),
     ),
 
   new SlashCommandBuilder()
     .setName("private")
-    .setDescription("كلمي Ghim🌧 بشكل خاص — الرد يظهر لك بس 🔒")
+    .setDescription("كلم 〆 𝐔𝐑 بشكل خاص — الرد يظهر لك بس 🔒")
     .addStringOption((o) =>
       o.setName("message").setDescription("رسالتك الخاصة").setRequired(true),
     ),
 
   new SlashCommandBuilder()
     .setName("summarize")
-    .setDescription("لخّصي لي نص أو موضوع 📄")
+    .setDescription("لخّص لي نص أو موضوع 📄")
     .addStringOption((o) =>
       o.setName("text").setDescription("النص أو الموضوع اللي تبي تلخيصه").setRequired(true),
     ),
 
   new SlashCommandBuilder()
     .setName("remind")
-    .setDescription("ذكّريني بشيء بعد وقت معين ⏰")
+    .setDescription("ذكّرني بشيء بعد وقت معين ⏰")
     .addStringOption((o) =>
       o.setName("message").setDescription("وش أذكّرك فيه؟").setRequired(true),
     )
@@ -186,7 +189,7 @@ const COMMANDS = [
         .setName("add")
         .setDescription("أضف لقب جديد للبوت")
         .addStringOption((o) =>
-          o.setName("name").setDescription("اللقب أو الاسم الجديد (مثال: غيمي)").setRequired(true),
+          o.setName("name").setDescription("اللقب أو الاسم الجديد").setRequired(true),
         ),
     )
     .addSubcommand((sub) =>
@@ -203,7 +206,7 @@ const COMMANDS = [
 
   new SlashCommandBuilder()
     .setName("game")
-    .setDescription("العب مع Ghim🌧 🎮")
+    .setDescription("العب مع 〆 𝐔𝐑 🎮")
     .addSubcommand((sub) =>
       sub
         .setName("rps")
@@ -221,7 +224,7 @@ const COMMANDS = [
         ),
     )
     .addSubcommand((sub) =>
-      sub.setName("guess").setDescription("خمّن الرقم — غيم تختار رقم من 1 إلى 100 🔢"),
+      sub.setName("guess").setDescription("خمّن الرقم — 〆 𝐔𝐑 يختار رقم من 1 إلى 100 🔢"),
     )
     .addSubcommand((sub) =>
       sub
@@ -235,13 +238,118 @@ const COMMANDS = [
       sub.setName("trivia").setDescription("سؤال ثقافي عشوائي 🧠"),
     )
     .addSubcommand((sub) =>
-      sub.setName("joke").setDescription("نكتة من غيم 😂"),
+      sub.setName("joke").setDescription("نكتة من 〆 𝐔𝐑 😂"),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("image")
+    .setDescription("ولّد صورة بالذكاء الاصطناعي 🎨")
+    .addStringOption((o) =>
+      o.setName("prompt").setDescription("وصف الصورة اللي تبيها (بالإنجليزي يعطي نتائج أفضل)").setRequired(true),
+    )
+    .addStringOption((o) =>
+      o.setName("size")
+        .setDescription("حجم الصورة")
+        .addChoices(
+          { name: "مربع 1024×1024", value: "1024x1024" },
+          { name: "أفقي 1280×720", value: "1280x720" },
+          { name: "عمودي 720×1280", value: "720x1280" },
+        ),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod")
+    .setDescription("أوامر الإدارة والتحكم 🔨")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
+    .addSubcommand((sub) =>
+      sub.setName("warn").setDescription("تحذير عضو ⚠️")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true))
+        .addStringOption((o) => o.setName("reason").setDescription("السبب").setRequired(false)),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("unwarn").setDescription("إلغاء آخر تحذير لعضو")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true)),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("warnings").setDescription("عرض تحذيرات عضو 📋")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true)),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("mute").setDescription("ميوت عضو (timeout) 🔇")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true))
+        .addIntegerOption((o) => o.setName("minutes").setDescription("المدة بالدقائق (افتراضي: 10)").setMinValue(1).setMaxValue(40320))
+        .addStringOption((o) => o.setName("reason").setDescription("السبب")),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("unmute").setDescription("إلغاء ميوت عضو 🔊")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true)),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("kick").setDescription("طرد عضو من السيرفر 👢")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true))
+        .addStringOption((o) => o.setName("reason").setDescription("السبب")),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("ban").setDescription("باند عضو من السيرفر 🔨")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true))
+        .addStringOption((o) => o.setName("reason").setDescription("السبب")),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("unban").setDescription("فك باند عضو 🔓")
+        .addStringOption((o) => o.setName("userid").setDescription("ID العضو").setRequired(true)),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("setnick").setDescription("تغيير اسم عضو ✏️")
+        .addUserOption((o) => o.setName("user").setDescription("العضو").setRequired(true))
+        .addStringOption((o) => o.setName("nickname").setDescription("الاسم الجديد (اتركه فاضي لإزالة الاسم)")),
+    )
+    .addSubcommand((sub) =>
+      sub.setName("clear").setDescription("حذف رسائل من القناة 🗑️")
+        .addIntegerOption((o) => o.setName("amount").setDescription("عدد الرسائل (1-100)").setRequired(true).setMinValue(1).setMaxValue(100)),
     ),
 
   new SlashCommandBuilder()
     .setName("ping")
-    .setDescription("تحقق إذا Ghim🌧 شغّالة ✅"),
+    .setDescription("تحقق إذا 〆 𝐔𝐑 شغّال ✅"),
 ].map((c) => c.toJSON());
+
+// ── Runware Image Generation ─────────────────────────────────────────────────
+
+interface RunwareResult {
+  imageURL: string;
+}
+
+async function generateImage(apiKey: string, prompt: string, width: number, height: number): Promise<string> {
+  const taskUUID = crypto.randomUUID();
+  const response = await fetch("https://api.runware.ai/v1", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify([{
+      taskType: "imageInference",
+      taskUUID,
+      positivePrompt: prompt,
+      model: "runware:100@1",
+      width,
+      height,
+      numberResults: 1,
+      outputFormat: "WEBP",
+      steps: 4,
+    }]),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Runware API error ${response.status}: ${text}`);
+  }
+
+  const json = await response.json() as { data: RunwareResult[] };
+  const imageURL = json.data?.[0]?.imageURL;
+  if (!imageURL) throw new Error("No image URL in Runware response");
+  return imageURL;
+}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -259,16 +367,13 @@ function addToHistory(userId: string, role: "user" | "assistant", content: strin
 async function getAIReply(openai: OpenAI, userId: string, userContent: string, retries = 3): Promise<string> {
   addToHistory(userId, "user", userContent);
   const history = getHistory(userId);
-  const systemPrompt =
-    userId === VIP_USER_ID ? VIP_SYSTEM_PROMPT :
-    userId === RYAN_USER_ID ? RYAN_SYSTEM_PROMPT :
-    SYSTEM_PROMPT;
+  const systemPrompt = userId === VIP_USER_ID ? VIP_SYSTEM_PROMPT : SYSTEM_PROMPT;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5-mini",
-        max_completion_tokens: 1024,
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 1024,
         messages: [
           { role: "system", content: systemPrompt },
           ...history.map((m) => ({ role: m.role, content: m.content })),
@@ -280,7 +385,6 @@ async function getAIReply(openai: OpenAI, userId: string, userContent: string, r
         addToHistory(userId, "assistant", reply);
         return reply;
       }
-      // empty reply — retry
       logger.warn({ attempt }, "AI returned empty reply, retrying...");
     } catch (err) {
       if (attempt === retries) throw err;
@@ -289,7 +393,7 @@ async function getAIReply(openai: OpenAI, userId: string, userContent: string, r
     }
   }
 
-  const fallback = "آسفة، ما قدرت أجيب رد الحين. جربي مرة ثانية! 🌧";
+  const fallback = "آسف، ما قدرت أجيب رد الحين. جرب مرة ثانية!";
   addToHistory(userId, "assistant", fallback);
   return fallback;
 }
@@ -324,13 +428,16 @@ async function registerCommands(token: string, clientId: string) {
 
 export function startDiscordBot() {
   const token = process.env.DISCORD_BOT_TOKEN;
-  const openaiBaseUrl = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-  const openaiApiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY;
+  const runwareApiKey = process.env.RUNWARE_API_KEY;
 
   if (!token) { logger.error("DISCORD_BOT_TOKEN is not set"); return; }
-  if (!openaiBaseUrl || !openaiApiKey) { logger.error("OpenAI env vars missing"); return; }
+  if (!groqApiKey) { logger.error("GROQ_API_KEY is not set"); return; }
 
-  const openai = new OpenAI({ baseURL: openaiBaseUrl, apiKey: openaiApiKey });
+  const openai = new OpenAI({
+    apiKey: groqApiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
 
   const client = new Client({
     intents: [
@@ -345,8 +452,8 @@ export function startDiscordBot() {
   // ── Ready ──────────────────────────────────────────────────────────────────
 
   client.once(Events.ClientReady, async (c) => {
-    logger.info(`Ghim🌧 online as ${c.user.tag}`);
-    c.user.setActivity("معاك دايماً 🌧", { type: ActivityType.Watching });
+    logger.info(`〆 𝐔𝐑 online as ${c.user.tag}`);
+    c.user.setActivity("معاك دايماً", { type: ActivityType.Watching });
     await registerCommands(token, c.user.id).catch((err) =>
       logger.error({ err }, "Failed to register slash commands"),
     );
@@ -364,12 +471,12 @@ export function startDiscordBot() {
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle(`أهلاً وسهلاً ${member.displayName}! 🌧`)
+      .setTitle(`أهلاً وسهلاً ${member.displayName}!`)
       .setDescription(
-        `يسعدني وجودك في **${member.guild.name}** 💙\nأنا Ghim🌧 مساعدتك الشخصية — كلمني في أي وقت وأكون معاك! 🌧`,
+        `يسعدني وجودك في **${member.guild.name}** 💙\nأنا 〆 𝐔𝐑 مساعدك الشخصي — كلمني في أي وقت وأكون معاك!`,
       )
       .setThumbnail(member.displayAvatarURL())
-      .setFooter({ text: "Ghim🌧 • مساعدتك الشخصية" });
+      .setFooter({ text: "〆 𝐔𝐑 • مساعدك الشخصي" });
 
     await channel.send({ embeds: [embed] }).catch(() => null);
   });
@@ -379,9 +486,9 @@ export function startDiscordBot() {
   client.on(Events.MessageCreate, async (message: Message) => {
     if (message.author.bot) return;
     const isDM = !message.guild;
-    const lower = message.content.toLowerCase();
+    const normalized = normalizeText(message.content);
     const isMentioned = message.mentions.has(client.user!);
-    const hasTrigger = [...botTriggers].some((t) => lower.includes(t.toLowerCase()));
+    const hasTrigger = [...botTriggers].some((t) => normalized.includes(normalizeText(t)));
     if (!isDM && !isMentioned && !hasTrigger) return;
 
     // احذف المنشن وكل الألقاب من الرسالة
@@ -397,7 +504,7 @@ export function startDiscordBot() {
       for (const chunk of splitMessage(reply)) await message.reply(chunk);
     } catch (err) {
       logger.error({ err }, "Error generating AI response");
-      await message.reply("حدث خطأ صغير.. جربي مرة ثانية 🌧");
+      await message.reply("حدث خطأ صغير.. جرب مرة ثانية");
     }
   });
 
@@ -410,7 +517,7 @@ export function startDiscordBot() {
 
     // /ping
     if (slash.commandName === "ping") {
-      await slash.reply(`🌧 أنا هنا! البينج: **${client.ws.ping}ms**`);
+      await slash.reply(`أنا هنا! البينج: **${client.ws.ping}ms**`);
       return;
     }
 
@@ -418,19 +525,24 @@ export function startDiscordBot() {
     if (slash.commandName === "help") {
       const embed = new EmbedBuilder()
         .setColor(0x5865f2)
-        .setTitle("Ghim🌧 — دليل الأوامر")
+        .setTitle("〆 𝐔𝐑 — دليل الأوامر")
         .addFields(
           { name: "/chat رسالة", value: "كلمني وأرد عليك" },
           { name: "/private رسالة", value: "محادثة خاصة لا يراها غيرك 🔒" },
-          { name: "/summarize نص", value: "لخّصي لك أي نص أو موضوع 📄" },
+          { name: "/summarize نص", value: "ألخّص لك أي نص أو موضوع 📄" },
           { name: "/remind رسالة minutes", value: "تذكير بعد وقت معين ⏰" },
           { name: "/note add/list/delete", value: "احفظ وأدر ملاحظاتك 📝" },
           { name: "/history", value: "شوف آخر محادثاتك معي 💬" },
           { name: "/clear", value: "امسح سجل المحادثة 🗑️" },
           { name: "/nickname add/list/remove", value: "أضف أو احذف ألقاب تنشّطني 💬" },
-          { name: "/ping", value: "تحقق إذا أنا شغّالة ✅" },
+          { name: "/image وصف", value: "ولّد صورة بالذكاء الاصطناعي 🎨" },
+          { name: "/mod warn/unwarn/warnings", value: "تحذير وإدارة التحذيرات ⚠️" },
+          { name: "/mod mute/unmute", value: "كتم وفك كتم الأعضاء 🔇" },
+          { name: "/mod kick / ban / unban", value: "طرد وباند وفك باند 🔨" },
+          { name: "/mod setnick / clear", value: "تغيير الاسم وحذف الرسائل ✏️" },
+          { name: "/ping", value: "تحقق إذا أنا شغّال ✅" },
         )
-        .setFooter({ text: "أو كلمني في DM أو اذكريني في أي قناة 🌧" });
+        .setFooter({ text: "أوامر /mod تتطلب صلاحيات إدارة • أو كلمني في DM أو اذكرني في أي قناة" });
       await slash.reply({ embeds: [embed], ephemeral: true });
       return;
     }
@@ -446,19 +558,19 @@ export function startDiscordBot() {
     if (slash.commandName === "history") {
       const history = getHistory(userId);
       if (history.length === 0) {
-        await slash.reply({ content: "ما عندنا محادثات سابقة بعد! كلمني وابدأ 🌧", ephemeral: true });
+        await slash.reply({ content: "ما عندنا محادثات سابقة بعد! كلمني وابدأ", ephemeral: true });
         return;
       }
       const last10 = history.slice(-10);
       const lines = last10.map((m) => {
-        const who = m.role === "user" ? "👤 أنت" : "🌧 Ghim";
+        const who = m.role === "user" ? "👤 أنت" : "〆 𝐔𝐑";
         const time = formatTimestamp(m.timestamp);
         const preview = m.content.slice(0, 80) + (m.content.length > 80 ? "..." : "");
         return `**${who}** (${time})\n${preview}`;
       });
       const embed = new EmbedBuilder()
         .setColor(0x5865f2)
-        .setTitle("💬 آخر محادثاتك مع Ghim🌧")
+        .setTitle("💬 آخر محادثاتك مع 〆 𝐔𝐑")
         .setDescription(lines.join("\n\n").slice(0, 4000));
       await slash.reply({ embeds: [embed], ephemeral: true });
       return;
@@ -475,7 +587,7 @@ export function startDiscordBot() {
         for (const chunk of chunks.slice(1)) await slash.followUp(chunk);
       } catch (err) {
         logger.error({ err }, "Error in /chat");
-        await slash.editReply("حدث خطأ صغير.. جربي مرة ثانية 🌧");
+        await slash.editReply("حدث خطأ صغير.. جرب مرة ثانية");
       }
       return;
     }
@@ -491,7 +603,7 @@ export function startDiscordBot() {
         for (const chunk of chunks.slice(1)) await slash.followUp({ content: chunk, ephemeral: true });
       } catch (err) {
         logger.error({ err }, "Error in /private");
-        await slash.editReply("حدث خطأ صغير.. جربي مرة ثانية 🌧");
+        await slash.editReply("حدث خطأ صغير.. جرب مرة ثانية");
       }
       return;
     }
@@ -502,14 +614,14 @@ export function startDiscordBot() {
       await slash.deferReply();
       try {
         const response = await openai.chat.completions.create({
-          model: "gpt-5-mini",
-          max_completion_tokens: 512,
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 512,
           messages: [
-            { role: "system", content: "أنتِ Ghim🌧. لخّصي النص التالي بشكل واضح ومختصر باللغة نفسها. استخدمي نقاط إذا كان النص طويلاً." },
+            { role: "system", content: "أنتَ 〆 𝐔𝐑. لخّص النص التالي بشكل واضح ومختصر باللغة نفسها. استخدم نقاط إذا كان النص طويلاً." },
             { role: "user", content: text },
           ],
         });
-        const summary = response.choices[0]?.message?.content?.trim() ?? "ما قدرت ألخص النص 🌧";
+        const summary = response.choices[0]?.message?.content?.trim() ?? "ما قدرت ألخص النص";
         const embed = new EmbedBuilder()
           .setColor(0x5865f2)
           .setTitle("📄 التلخيص")
@@ -517,7 +629,7 @@ export function startDiscordBot() {
         await slash.editReply({ embeds: [embed] });
       } catch (err) {
         logger.error({ err }, "Error in /summarize");
-        await slash.editReply("حدث خطأ أثناء التلخيص 🌧");
+        await slash.editReply("حدث خطأ أثناء التلخيص");
       }
       return;
     }
@@ -529,18 +641,17 @@ export function startDiscordBot() {
       const ms = minutes * 60 * 1000;
 
       await slash.reply({
-        content: `⏰ تمام! سأذكّرك بـ "**${msg}**" بعد **${minutes} دقيقة** 🌧`,
+        content: `⏰ تمام! سأذكّرك بـ "**${msg}**" بعد **${minutes} دقيقة**`,
         ephemeral: true,
       });
 
       setTimeout(async () => {
         try {
           const user = await client.users.fetch(userId);
-          await user.send(`⏰ **تذكير من Ghim🌧!**\n\n${msg} 🌧`);
+          await user.send(`⏰ **تذكير من 〆 𝐔𝐑!**\n\n${msg}`);
         } catch {
-          // إذا ما قدر يرسل DM، يحاول في نفس القناة
           if (slash.channel) {
-            await slash.channel.send(`⏰ <@${userId}> **تذكير:** ${msg} 🌧`).catch(() => null);
+            await slash.channel.send(`⏰ <@${userId}> **تذكير:** ${msg}`).catch(() => null);
           }
         }
       }, ms);
@@ -555,7 +666,7 @@ export function startDiscordBot() {
         const text = slash.options.getString("text", true);
         if (!userNotes.has(userId)) userNotes.set(userId, []);
         userNotes.get(userId)!.push({ text, createdAt: Date.now() });
-        await slash.reply({ content: `📝 تم حفظ ملاحظتك! عندك الآن **${userNotes.get(userId)!.length}** ملاحظة 🌧`, ephemeral: true });
+        await slash.reply({ content: `📝 تم حفظ ملاحظتك! عندك الآن **${userNotes.get(userId)!.length}** ملاحظة`, ephemeral: true });
         return;
       }
 
@@ -582,7 +693,7 @@ export function startDiscordBot() {
           return;
         }
         notes.splice(num - 1, 1);
-        await slash.reply({ content: `🗑️ تم حذف الملاحظة رقم **${num}** 🌧`, ephemeral: true });
+        await slash.reply({ content: `🗑️ تم حذف الملاحظة رقم **${num}**`, ephemeral: true });
         return;
       }
     }
@@ -604,8 +715,8 @@ export function startDiscordBot() {
           (userChoice === "rock" && botChoice === "scissors") ||
           (userChoice === "paper" && botChoice === "rock") ||
           (userChoice === "scissors" && botChoice === "paper")
-        ) result = "🎉 أنت فزت! مبروك 🌧";
-        else result = "😏 أنا فزت! حاول مرة ثانية 🌧";
+        ) result = "🎉 أنت فزت! مبروك";
+        else result = "😏 أنا فزت! حاول مرة ثانية";
 
         const embed = new EmbedBuilder()
           .setColor(result.includes("فزت! مبروك") ? 0x57f287 : result.includes("أنا فزت") ? 0xed4245 : 0xfee75c)
@@ -646,14 +757,14 @@ export function startDiscordBot() {
           const embed = new EmbedBuilder()
             .setColor(0x57f287)
             .setTitle("🎉 صح! أنت عبقري!")
-            .setDescription(`الرقم كان **${game.secret}** وخمّنته في **${game.attempts}** محاولة! 🌧`);
+            .setDescription(`الرقم كان **${game.secret}** وخمّنته في **${game.attempts}** محاولة!`);
           await slash.reply({ embeds: [embed] });
         } else if (game.attempts >= 10) {
           activeGuessGames.delete(userId);
           const embed = new EmbedBuilder()
             .setColor(0xed4245)
             .setTitle("😔 خلصت المحاولات!")
-            .setDescription(`الرقم كان **${game.secret}** — حظاً أحسن المرة القادمة! ابدأ من جديد بـ \`/game guess\` 🌧`);
+            .setDescription(`الرقم كان **${game.secret}** — حظاً أحسن المرة القادمة! ابدأ من جديد بـ \`/game guess\``);
           await slash.reply({ embeds: [embed] });
         } else {
           const hint = guess < game.secret ? "📈 أكبر من كذا!" : "📉 أصغر من كذا!";
@@ -677,7 +788,6 @@ export function startDiscordBot() {
           .setTitle("🧠 سؤال ثقافي")
           .setDescription(`**${q.question}**\n\n${optionsText}`)
           .setFooter({ text: `الإجابة الصحيحة: ${letters[q.answer]}) ${q.options[q.answer]}` });
-        // أرسل السؤال بدون footer أولاً ثم عدّل بعد 10 ثواني
         await slash.reply({
           embeds: [
             new EmbedBuilder()
@@ -698,11 +808,38 @@ export function startDiscordBot() {
         const joke = JOKES[Math.floor(Math.random() * JOKES.length)]!;
         const embed = new EmbedBuilder()
           .setColor(0xfee75c)
-          .setTitle("😂 نكتة من Ghim🌧")
+          .setTitle("😂 نكتة من 〆 𝐔𝐑")
           .setDescription(joke);
         await slash.reply({ embeds: [embed] });
         return;
       }
+    }
+
+    // /image
+    if (slash.commandName === "image") {
+      if (!runwareApiKey) {
+        await slash.reply({ content: "⚠️ ميزة توليد الصور مو مفعّلة حالياً.", ephemeral: true });
+        return;
+      }
+      const prompt = slash.options.getString("prompt", true);
+      const sizeOpt = slash.options.getString("size") ?? "1024x1024";
+      const [w, h] = sizeOpt.split("x").map(Number) as [number, number];
+
+      await slash.deferReply();
+      try {
+        const imageURL = await generateImage(runwareApiKey, prompt, w, h);
+        const embed = new EmbedBuilder()
+          .setColor(0x5865f2)
+          .setTitle("🎨 صورتك جاهزة!")
+          .setDescription(`**الوصف:** ${prompt}`)
+          .setImage(imageURL)
+          .setFooter({ text: `الحجم: ${sizeOpt} • Powered by Runware.ai` });
+        await slash.editReply({ embeds: [embed] });
+      } catch (err) {
+        logger.error({ err }, "Error in /image");
+        await slash.editReply("حدث خطأ أثناء توليد الصورة، جرب مرة ثانية.");
+      }
+      return;
     }
 
     // /nickname
@@ -716,12 +853,12 @@ export function startDiscordBot() {
           return;
         }
         if (botTriggers.has(name)) {
-          await slash.reply({ content: `"**${name}**" موجود أصلاً في قائمة الألقاب! 🌧`, ephemeral: true });
+          await slash.reply({ content: `"**${name}**" موجود أصلاً في قائمة الألقاب!`, ephemeral: true });
           return;
         }
         botTriggers.add(name);
         await slash.reply({
-          content: `✅ تم إضافة "**${name}**" — الحين إذا أحد كتبها في الشات أرد تلقائياً 🌧`,
+          content: `✅ تم إضافة "**${name}**" — الحين إذا أحد كتبها في الشات أرد تلقائياً`,
           ephemeral: true,
         });
         return;
@@ -733,7 +870,7 @@ export function startDiscordBot() {
           .setColor(0x5865f2)
           .setTitle("💬 ألقابي وأسمائي")
           .setDescription(list || "ما في ألقاب مضافة بعد.")
-          .setFooter({ text: "كلمني بأي اسم من هذي وأرد عليك 🌧" });
+          .setFooter({ text: "كلمني بأي اسم من هذي وأرد عليك" });
         await slash.reply({ embeds: [embed], ephemeral: true });
         return;
       }
@@ -745,7 +882,206 @@ export function startDiscordBot() {
           return;
         }
         botTriggers.delete(name);
-        await slash.reply({ content: `🗑️ تم حذف "**${name}**" من الألقاب 🌧`, ephemeral: true });
+        await slash.reply({ content: `🗑️ تم حذف "**${name}**" من الألقاب`, ephemeral: true });
+        return;
+      }
+    }
+
+    // /mod
+    if (slash.commandName === "mod") {
+      const sub = slash.options.getSubcommand();
+      const guild = slash.guild;
+      if (!guild) {
+        await slash.reply({ content: "هذا الأمر يشتغل داخل السيرفر فقط.", ephemeral: true });
+        return;
+      }
+
+      // /mod warn
+      if (sub === "warn") {
+        const target = slash.options.getUser("user", true);
+        const reason = slash.options.getString("reason") ?? "لم يُذكر سبب";
+        const key = `${guild.id}:${target.id}`;
+        if (!userWarnings.has(key)) userWarnings.set(key, []);
+        userWarnings.get(key)!.push({ reason, moderatorId: userId, timestamp: Date.now() });
+        const count = userWarnings.get(key)!.length;
+        const embed = new EmbedBuilder()
+          .setColor(0xfee75c)
+          .setTitle("⚠️ تحذير")
+          .addFields(
+            { name: "العضو", value: `<@${target.id}>`, inline: true },
+            { name: "عدد التحذيرات", value: `${count}`, inline: true },
+            { name: "السبب", value: reason },
+          )
+          .setFooter({ text: `بواسطة ${slash.user.username}` })
+          .setTimestamp();
+        await slash.reply({ embeds: [embed] });
+        try { await target.send(`⚠️ تلقيت تحذيراً في **${guild.name}**\n**السبب:** ${reason}\n**إجمالي تحذيراتك:** ${count}`); } catch { /* DM مغلق */ }
+        return;
+      }
+
+      // /mod unwarn
+      if (sub === "unwarn") {
+        const target = slash.options.getUser("user", true);
+        const key = `${guild.id}:${target.id}`;
+        const warns = userWarnings.get(key) ?? [];
+        if (warns.length === 0) {
+          await slash.reply({ content: `<@${target.id}> ما عنده تحذيرات.`, ephemeral: true });
+          return;
+        }
+        warns.pop();
+        await slash.reply({ content: `✅ تم إلغاء آخر تحذير لـ <@${target.id}>. التحذيرات المتبقية: **${warns.length}**` });
+        return;
+      }
+
+      // /mod warnings
+      if (sub === "warnings") {
+        const target = slash.options.getUser("user", true);
+        const key = `${guild.id}:${target.id}`;
+        const warns = userWarnings.get(key) ?? [];
+        if (warns.length === 0) {
+          await slash.reply({ content: `<@${target.id}> ما عنده تحذيرات.`, ephemeral: true });
+          return;
+        }
+        const lines = warns.map((w, i) => {
+          const date = new Date(w.timestamp).toLocaleDateString("ar-SA");
+          return `**${i + 1}.** ${w.reason} — <@${w.moderatorId}> (${date})`;
+        });
+        const embed = new EmbedBuilder()
+          .setColor(0xfee75c)
+          .setTitle(`📋 تحذيرات ${target.username}`)
+          .setDescription(lines.join("\n").slice(0, 4000))
+          .setThumbnail(target.displayAvatarURL());
+        await slash.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+
+      // /mod mute
+      if (sub === "mute") {
+        const target = slash.options.getMember("user") as GuildMember | null;
+        if (!target) { await slash.reply({ content: "ما قدرت أجد العضو.", ephemeral: true }); return; }
+        const minutes = slash.options.getInteger("minutes") ?? 10;
+        const reason = slash.options.getString("reason") ?? "لم يُذكر سبب";
+        try {
+          await target.timeout(minutes * 60 * 1000, reason);
+          const embed = new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle("🔇 تم الكتم")
+            .addFields(
+              { name: "العضو", value: `<@${target.id}>`, inline: true },
+              { name: "المدة", value: `${minutes} دقيقة`, inline: true },
+              { name: "السبب", value: reason },
+            )
+            .setFooter({ text: `بواسطة ${slash.user.username}` })
+            .setTimestamp();
+          await slash.reply({ embeds: [embed] });
+        } catch {
+          await slash.reply({ content: "ما قدرت أكتم العضو — تأكد إن البوت عنده صلاحية Moderate Members.", ephemeral: true });
+        }
+        return;
+      }
+
+      // /mod unmute
+      if (sub === "unmute") {
+        const target = slash.options.getMember("user") as GuildMember | null;
+        if (!target) { await slash.reply({ content: "ما قدرت أجد العضو.", ephemeral: true }); return; }
+        try {
+          await target.timeout(null);
+          await slash.reply({ content: `🔊 تم فك الكتم عن <@${target.id}>` });
+        } catch {
+          await slash.reply({ content: "ما قدرت أفك الكتم.", ephemeral: true });
+        }
+        return;
+      }
+
+      // /mod kick
+      if (sub === "kick") {
+        const target = slash.options.getMember("user") as GuildMember | null;
+        if (!target) { await slash.reply({ content: "ما قدرت أجد العضو.", ephemeral: true }); return; }
+        const reason = slash.options.getString("reason") ?? "لم يُذكر سبب";
+        try {
+          await target.kick(reason);
+          const embed = new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle("👢 تم الطرد")
+            .addFields(
+              { name: "العضو", value: target.user.username, inline: true },
+              { name: "السبب", value: reason },
+            )
+            .setFooter({ text: `بواسطة ${slash.user.username}` })
+            .setTimestamp();
+          await slash.reply({ embeds: [embed] });
+        } catch {
+          await slash.reply({ content: "ما قدرت أطرد العضو — تأكد إن البوت عنده صلاحية Kick Members.", ephemeral: true });
+        }
+        return;
+      }
+
+      // /mod ban
+      if (sub === "ban") {
+        const target = slash.options.getMember("user") as GuildMember | null;
+        if (!target) { await slash.reply({ content: "ما قدرت أجد العضو.", ephemeral: true }); return; }
+        const reason = slash.options.getString("reason") ?? "لم يُذكر سبب";
+        try {
+          await target.ban({ reason });
+          const embed = new EmbedBuilder()
+            .setColor(0xed4245)
+            .setTitle("🔨 تم الباند")
+            .addFields(
+              { name: "العضو", value: target.user.username, inline: true },
+              { name: "السبب", value: reason },
+            )
+            .setFooter({ text: `بواسطة ${slash.user.username}` })
+            .setTimestamp();
+          await slash.reply({ embeds: [embed] });
+        } catch {
+          await slash.reply({ content: "ما قدرت أباند العضو — تأكد إن البوت عنده صلاحية Ban Members.", ephemeral: true });
+        }
+        return;
+      }
+
+      // /mod unban
+      if (sub === "unban") {
+        const targetId = slash.options.getString("userid", true).trim();
+        try {
+          await guild.bans.remove(targetId);
+          await slash.reply({ content: `🔓 تم فك الباند عن العضو \`${targetId}\`` });
+        } catch {
+          await slash.reply({ content: "ما قدرت أفك الباند — تأكد من صحة الـ ID وأن البوت عنده صلاحية Ban Members.", ephemeral: true });
+        }
+        return;
+      }
+
+      // /mod setnick
+      if (sub === "setnick") {
+        const target = slash.options.getMember("user") as GuildMember | null;
+        if (!target) { await slash.reply({ content: "ما قدرت أجد العضو.", ephemeral: true }); return; }
+        const nickname = slash.options.getString("nickname") ?? null;
+        try {
+          await target.setNickname(nickname);
+          const msg = nickname
+            ? `✏️ تم تغيير اسم <@${target.id}> إلى **${nickname}**`
+            : `✏️ تم إزالة اسم <@${target.id}> المخصص`;
+          await slash.reply({ content: msg });
+        } catch {
+          await slash.reply({ content: "ما قدرت أغير الاسم — تأكد إن البوت عنده صلاحية Manage Nicknames.", ephemeral: true });
+        }
+        return;
+      }
+
+      // /mod clear
+      if (sub === "clear") {
+        const amount = slash.options.getInteger("amount", true);
+        if (!slash.channel || !slash.channel.isTextBased() || slash.channel.isDMBased()) {
+          await slash.reply({ content: "هذا الأمر يشتغل في قنوات النص فقط.", ephemeral: true });
+          return;
+        }
+        try {
+          await slash.deferReply({ ephemeral: true });
+          const deleted = await (slash.channel as import("discord.js").TextChannel).bulkDelete(amount, true);
+          await slash.editReply({ content: `🗑️ تم حذف **${deleted.size}** رسالة` });
+        } catch {
+          await slash.editReply({ content: "ما قدرت أحذف الرسائل — تأكد إن البوت عنده صلاحية Manage Messages." });
+        }
         return;
       }
     }
